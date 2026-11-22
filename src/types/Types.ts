@@ -77,3 +77,8 @@ export type UpdateTask = {
   done?: boolean;
   archived?: boolean;
 }
+
+export type AccessToken= {
+  user:User;
+  access_token:string;
+}

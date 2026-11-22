@@ -1,24 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CalendarDays, ListTodo, CheckCircle2, ChevronLeft } from 'lucide-react';
-import type { Url } from '../types/Types';
+import type { Url, Project } from '../types/Types';
 import { useTasks } from '../context/TasksContext';
 import { useSidebar } from '../context/SidebarContext';
+import { projectAPI } from '../server/todo.api';
 
-const PROJECTS = [
-  { name: 'Design System', dot: 'bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]' },
-  { name: 'Mobile App',    dot: 'bg-[#EC4899] shadow-[0_0_8px_#EC4899]' },
-  { name: 'Personal Site', dot: 'bg-[#FACC15] shadow-[0_0_8px_#FACC15]' },
+// ألوان النقاط — تُطبّق بالتناوب على المشاريع القادمة من الـ API
+const DOT_COLORS = [
+  'bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]',
+  'bg-[#EC4899] shadow-[0_0_8px_#EC4899]',
+  'bg-[#FACC15] shadow-[0_0_8px_#FACC15]',
+  'bg-[#A78BFA] shadow-[0_0_8px_#A78BFA]',
+  'bg-[#34D399] shadow-[0_0_8px_#34D399]',
 ];
 
-export default function Sidebar() {
-  const [name] = useState<string>('Milad');
-  const [lastName] = useState<string>('Shikh Nasir');
+// استخراج الاسم والأحرف الأولى من user_data أو user_email
 
+
+export default function Sidebar() {
+  const email = localStorage.getItem('user_email');
   const { tasks } = useTasks();
   const { pathname } = useLocation();
   const { collapsed, toggle } = useSidebar();
-  const pendingCount = tasks.filter((t) => !t.done).length;
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const pendingCount = tasks.filter((t) => !t.done && !t.archived).length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    projectAPI
+      .getAllProjects()
+      .then((data) => {
+        if (!cancelled) setProjects(data);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error(err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const NAV: Url[] = [
     { label: 'Today',     active: true, badge: String(pendingCount), href: '/',          icon: CalendarDays },
@@ -52,9 +76,8 @@ export default function Sidebar() {
         title={collapsed ? 'Dashboard' : undefined}
         className={`mb-7 flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}
       >
-      
-  <img src="/logo.png" alt="Logo" className="h-12 w-12 flex-none rounded-[10px]" />
-  <span
+        <img src="/logo.png" alt="Logo" className="h-12 w-12 flex-none rounded-[10px]" />
+        <span
           className={`overflow-hidden whitespace-nowrap text-[15px] font-bold tracking-[0.14em] text-white transition-all duration-300 ${
             collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
           }`}
@@ -115,7 +138,6 @@ export default function Sidebar() {
                 </span>
               </span>
 
-              {/* Expanded badge */}
               {!collapsed && item.badge && (
                 <span className="rounded-md bg-[#7C3AED]/30 px-1.5 py-[3px] text-[11px] font-semibold leading-none text-violet-300">
                   {item.badge}
@@ -135,43 +157,47 @@ export default function Sidebar() {
         </div>
       )}
 
+      {/* My Projects list — تأتي من الـ API */}
       <div className={`flex flex-col gap-[2px] ${collapsed ? 'items-center' : ''}`}>
-        {PROJECTS.map((project) => (
-          <div
-            key={project.name}
-            title={collapsed ? project.name : undefined}
-            className={`flex cursor-pointer items-center rounded-[10px] font-medium text-white/55 transition hover:bg-white/5 hover:text-white/85 ${
-              collapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3 py-2 text-[13px]'
-            }`}
-          >
-            <span className={`h-[7px] w-[7px] shrink-0 rounded-full ${project.dot}`} />
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+        {projects.map((project, i) => {
+          const dot = DOT_COLORS[i % DOT_COLORS.length];
+          const projectName = (project as { name?: string }).name ?? 'Untitled';
+
+          return (
+            <div
+              key={(project as { _id?: string })._id ?? projectName ?? i}
+              title={collapsed ? projectName : undefined}
+              className={`flex cursor-pointer items-center rounded-[10px] font-medium text-white/55 transition hover:bg-white/5 hover:text-white/85 ${
+                collapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3 py-2 text-[13px]'
               }`}
             >
-              {project.name}
-            </span>
-          </div>
-        ))}
+              <span className={`h-[7px] w-[7px] shrink-0 rounded-full ${dot}`} />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                  collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                }`}
+              >
+                {projectName}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* User card */}
       <div
-        title={collapsed ? `${name} ${lastName}` : undefined}
+        title={collapsed ? displayName : undefined}
         className={`mt-auto flex items-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all duration-300 ${
           collapsed ? 'justify-center px-1.5 py-1.5' : 'gap-2.5 px-2.5 py-2.5'
         }`}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-[11px] font-bold text-white">
-          {name[0]}{lastName[0]}
-        </div>
+        
         <span
           className={`overflow-hidden whitespace-nowrap text-[13px] font-medium text-white transition-all duration-300 ${
             collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
           }`}
         >
-          {name} {lastName}
+          {email}
         </span>
       </div>
     </aside>

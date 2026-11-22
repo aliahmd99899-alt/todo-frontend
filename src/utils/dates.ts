@@ -17,7 +17,7 @@ export function isoToday(): string {
   return iso(new Date());
 }
 
-function parseISO(s: string): Date {
+export function parseISO(s: string): Date {
   // Take only the YYYY-MM-DD part and build a LOCAL Date — never rely on
   // `new Date('YYYY-MM-DD')`, which is parsed as UTC and can shift the day.
   const [y, m, d] = s.slice(0, 10).split('-').map(Number);
@@ -30,7 +30,7 @@ export function addDays(d: Date, n: number): Date {
   return r;
 }
 
-function startOfWeek(d: Date): Date {
+export function startOfWeek(d: Date): Date {
   const r = new Date(d);
   r.setHours(0, 0, 0, 0);
   const dow = r.getDay(); // 0 = Sunday

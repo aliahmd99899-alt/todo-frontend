@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import PendingTasks from './pages/PendingTasks';
 import Completed from './pages/Completed';
 import AddTaskModal from './components/AddTaskModal';
@@ -48,8 +50,8 @@ export default function App() {
         <Route path="/"          element={isAuthenticated ? <Dashboard />   : <AuthRequired />} />
         <Route path="/pending"   element={isAuthenticated ? <PendingTasks /> : <AuthRequired />} />
         <Route path="/completed" element={isAuthenticated ? <Completed />   : <AuthRequired />} />
-        <Route path="/login"     element={<AuthRequired />} />
-        <Route path="/register"  element={<AuthRequired />} />
+        <Route path="/login"     element={<Login />} />
+        <Route path="/register"  element={<Register />} />
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
 

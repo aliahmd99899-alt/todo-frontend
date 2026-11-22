@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { Task, CreateTaskPayload, UpdateTask} from '../types/Types'
-import {taskApi } from '../server/todo.api'
+import {taskAPI } from '../server/todo.api'
 import {isoToday} from '../utils/dates'
 
 const TasksContext = createContext(null);
@@ -10,7 +10,7 @@ export function TasksProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
 
-    taskApi.getAllTasks()
+    taskAPI.getAllTasks()
     .then(data => {
       if (!cancelled) setTasks(data);
     })
@@ -23,7 +23,7 @@ export function TasksProvider({ children }) {
   
   const addTask = async (task: CreateTaskPayload) => {
   try {
-    const created = await taskApi.addTask(task);  // ← الخادم يُرجع المهمة الكاملة
+    const created = await taskAPI.addTask(task);  // ← الخادم يُرجع المهمة الكاملة
     setTasks(prev => [created, ...prev]);         // ← حدّث الحالة المحلية
   } catch (err) {
     console.error('Failed to add task', err);
@@ -44,7 +44,7 @@ export function TasksProvider({ children }) {
 
   const archiveTask = async (id: string) => {
     try {
-    const updated = await taskApi.updateTask(id, { archived: true });
+    const updated = await taskAPI.updateTask(id, { archived: true });
     setTasks(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       console.error('Failed to archive task', err);
@@ -54,7 +54,7 @@ export function TasksProvider({ children }) {
 
   const unarchiveTask = async (id: string) => {
     try {
-      const updated = await taskApi.updateTask(id, { archived: false });
+      const updated = await taskAPI.updateTask(id, { archived: false });
       setTasks(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       console.error('Failed to unarchive task', err);
