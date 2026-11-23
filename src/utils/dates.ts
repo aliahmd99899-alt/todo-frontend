@@ -95,3 +95,17 @@ export function dueSortValue(dueDate: string | null | undefined): number {
   if (!dueDate) return NO_DUE;
   return parseISO(dueDate).getTime();
 }
+
+export const normalizeDate = (value: unknown, fallback: string): string => {
+  if (typeof value !== 'string' || !value) return fallback;
+  return value.slice(0, 10);
+};
+
+export const DOT_COLORS = [
+  'bg-[#22D3EE]',
+  'bg-[#EC4899]',
+  'bg-[#FACC15]',
+  'bg-[#A78BFA]',
+  'bg-[#34D399]',
+];
+

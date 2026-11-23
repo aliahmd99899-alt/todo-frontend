@@ -1,7 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { projectAPI } from '../server/todo.api';
 import type { Project, CreateProjectPayload } from '../types/Types';
+import Button from '../ui/Button';
+import Field from '../ui/Field';
+import Icon from '../ui/Icon';
+import { useModalLifecycle } from '../hooks/useModalLifecycle';
+import { FIELD, ERROR_BOX } from '../constants/styles';
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+  (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+  (err instanceof Error ? err.message : fallback);
+
+function unwrapProject(res: Project | { data: Project }): Project {
+  if (res && typeof res === 'object' && 'data' in res) {
+    return (res as { data: Project }).data;
+  }
+  return res as Project;
+}
 
 type AddProjectModalProps = {
   open: boolean;
@@ -10,31 +26,22 @@ type AddProjectModalProps = {
 };
 
 export default function AddProjectModal({ open, onClose, onCreated }: AddProjectModalProps) {
-  const [name, setName] = useState('');
-  const [entered, setEntered] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset + focus + entrance animation
-  useEffect(() => {
-    if (!open) { setEntered(false); return; }
-    setName('');
-    setError('');
-    const focusId = setTimeout(() => inputRef.current?.focus(), 60);
-    const rafId = requestAnimationFrame(() => setEntered(true));
-    return () => { clearTimeout(focusId); cancelAnimationFrame(rafId); };
-  }, [open]);
+  const [name, setName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  // Escape يغلق
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !submitting) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose, submitting]);
+  const { entered } = useModalLifecycle({
+    open,
+    onClose,
+    onReset: () => {
+      setName('');
+      setError('');
+    },
+    inputRef,
+    blocked: submitting,
+  });
 
   if (!open) return null;
 
@@ -46,17 +53,12 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
     setError('');
 
     try {
-      const res = await projectAPI.addProject(
-        { name: name.trim() } as unknown as CreateProjectPayload,
-      );
-      const created = (res as { data?: Project }).data ?? (res as unknown as Project);
-      onCreated(created);
+      const payload: CreateProjectPayload = { name: name.trim() };
+      const res = await projectAPI.addProject(payload);
+      onCreated(unwrapProject(res));
       onClose();
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        (err instanceof Error ? err.message : 'Failed to create project. Please try again.');
-      setError(message);
+      setError(getErrorMessage(err, 'Failed to create project. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +75,6 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
           entered ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
-        {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-[-0.01em] text-white">
             <span className="bg-gradient-to-r from-[#A78BFA] to-[#EC4899] bg-clip-text text-transparent">
@@ -88,15 +89,12 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
             aria-label="Close"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-white disabled:opacity-40"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            <Icon d="M18 6 6 18M6 6l12 12" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-white/50">Name</label>
+          <Field label="Name">
             <input
               ref={inputRef}
               type="text"
@@ -105,32 +103,24 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
               required
               disabled={submitting}
               placeholder="Enter project name"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-white placeholder:text-white/30 outline-none transition focus:ring-2 focus:ring-[#7C3AED]/60 disabled:opacity-60"
+              className={`${FIELD} px-4 py-3 placeholder:text-white/30`}
             />
-          </div>
+          </Field>
 
-          {error && (
-            <p className="rounded-lg border border-pink-500/25 bg-pink-500/10 px-3 py-2 text-[12.5px] text-pink-300">
-              {error}
-            </p>
-          )}
+          {error && <p className={`rounded-lg px-3 py-2 ${ERROR_BOX}`}>{error}</p>}
 
           <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-[13px] font-medium text-white/70 transition hover:bg-white/10 hover:text-white disabled:opacity-40"
-            >
+            <Button onClick={onClose} disabled={submitting} className="rounded-xl px-4 py-2.5 text-[13px]">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={!name.trim() || submitting}
-              className="rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-purple-500/30 transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+              className="rounded-xl px-4 py-2.5 text-[13px]"
             >
               {submitting ? 'Creating…' : 'Add Project'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

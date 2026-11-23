@@ -23,7 +23,7 @@ export type RegisterPayload = LoginPayload & {
 export type Project = {
   id: string;
   name: string;
-  color: string;
+  color?: string;
   userId: string;
   user?: User;
   tasks?: Task[];
@@ -63,14 +63,7 @@ export type CreateProjectPayload = {
   color?: string
 };
 
-export type CreateTaskPayload = {
-  title: string;
-  category?: TaskCategory;
-  dueDate?: string | null;
-  projectId?: string | null;
-  done?: boolean;
-  archived?: boolean;
-};
+
 export type UpdateTask = {
   title?: string;
   category?: TaskCategory;
@@ -82,3 +75,19 @@ export type AccessToken= {
   user:User;
   access_token:string;
 }
+
+
+export type AddTaskModalProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+
+
+export type CreateTaskPayload = {
+  title: string;
+  project: string;
+  projectId: string;
+  category: 'Work' | 'Personal';
+  dueDate: string;
+};
