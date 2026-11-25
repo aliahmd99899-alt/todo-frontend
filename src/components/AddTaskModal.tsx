@@ -57,7 +57,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
   if (!open) return null;
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
-  const selectedProjectName = selectedProject?.name ?? '';
+  
   const canSubmit = !!title.trim() && !!selectedProjectId && !submitting;
 
   const handleProjectCreated = (newProject: Project) => {
@@ -68,7 +68,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || submitting) return;
-    if (!selectedProjectId || !selectedProjectName) {
+    if (!selectedProjectId ) {
       setError('Please create or select a project first.');
       return;
     }
@@ -79,7 +79,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
     try {
       const payload: CreateTaskPayload = {
         title: title.trim(),
-        project: selectedProjectName,
+        
         projectId: selectedProjectId,
         category,
         dueDate,

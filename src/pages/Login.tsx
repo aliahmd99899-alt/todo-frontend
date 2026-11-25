@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import {authAPI} from '../server/todo.api';
+import { authAPI } from '../server/todo.api';
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+  (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+  (err instanceof Error ? err.message : fallback);
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -8,27 +12,27 @@ export default function Login() {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  if (!email.trim() || !password) {
-    setError('Please fill in all fields.');
-    return;
-  }
+    if (!email.trim() || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
 
-  try {
-    const token = await authAPI.login({ email: email.trim(), password });
-    console.log(token.data.access_token)
-    console.log(token.access_token)
-    console.log(token)
-    localStorage.setItem('access_token', token.data.access_token);
-    localStorage.setItem('user_email', email.trim());
-    window.location.href = '/';
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
-  }
-};
-  
+    try {
+      const data = await authAPI.login({ email: email.trim(), password });
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user_email', data.user?.email ?? email.trim());
+      if (data.user) {
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+      }
+      window.location.href = '/';
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login failed. Please try again.'));
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0E0A22] font-sans text-white">
       <div className="pointer-events-none fixed -right-60 -top-72 h-[820px] w-[820px] rounded-full bg-[#7C3AED] opacity-40 blur-3xl" />

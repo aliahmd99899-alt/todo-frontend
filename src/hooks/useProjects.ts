@@ -9,8 +9,7 @@ const getErrorMessage = (err: unknown, fallback: string) =>
 function extractList(res: unknown): Project[] {
   if (Array.isArray(res)) return res as Project[];
   if (res && typeof res === 'object' && 'data' in res) {
-    const data = (res as { data: unknown }).data;
-    if (Array.isArray(data)) return data as Project[];
+    return extractList((res as { data: unknown }).data);
   }
   return [];
 }
@@ -23,26 +22,41 @@ export function useProjects(open: boolean) {
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    if (!open) return;
+
     let cancelled = false;
+    setLoading(true);
+    setError('');
 
     projectAPI
       .getAllProjects()
-      .then((data) => {
-        if (!cancelled) setProjects(data);
+      .then((res) => {
+        if (cancelled) return;
+        const list = extractList(res);
+        setProjects(list);
+        setSelectedProjectId((prev) =>
+          prev && list.some((p) => p.id === prev) ? prev : (list[0]?.id ?? '')
+        );
       })
       .catch((err) => {
-        if (!cancelled) console.error(err);
+        if (cancelled) return;
+        setError(getErrorMessage(err, 'Failed to load projects. Please try again.'));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [open, retryKey]);
 
   const retry = useCallback(() => setRetryKey((k) => k + 1), []);
 
   const addProject = useCallback((project: Project) => {
-    setProjects((prev) => [...prev, project]);
+    setProjects((prev) =>
+      prev.some((p) => p.id === project.id) ? prev : [...prev, project]
+    );
     setError('');
     if (project.id) setSelectedProjectId(project.id);
   }, []);

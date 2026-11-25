@@ -86,7 +86,6 @@ export type AddTaskModalProps = {
 
 export type CreateTaskPayload = {
   title: string;
-  project: string;
   projectId: string;
   category: 'Work' | 'Personal';
   dueDate: string;

@@ -60,17 +60,42 @@ export function TasksProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const toggleTask = useCallback((id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        if (t.done) {
-          return { ...t, done: false, completedAt: null };
-        }
-        return { ...t, done: true, completedAt: isoToday() };
-      })
-    );
-  }, []);
+  const toggleTask = useCallback(
+    async (id: string) => {
+      const target = tasks.find((t) => t.id === id);
+      if (!target) return;
+
+      const nextDone = !target.done;
+      const optimisticCompletedAt = nextDone ? isoToday() : null;
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, done: nextDone, completedAt: optimisticCompletedAt } : t
+        )
+      );
+
+      try {
+        const res = await taskAPI.updateTask(id, { done: nextDone });
+        const updated = unwrapTask(res);
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  ...updated,
+                  project: updated.project ?? t.project,
+                  completedAt: updated.completedAt ?? optimisticCompletedAt,
+                }
+              : t
+          )
+        );
+      } catch (err) {
+        setTasks((prev) => prev.map((t) => (t.id === id ? target : t)));
+        console.error('Failed to toggle task', err);
+      }
+    },
+    [tasks]
+  );
 
   const archiveTask = useCallback(async (id: string) => {
     try {

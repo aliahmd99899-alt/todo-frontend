@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import {authAPI} from '../server/todo.api';
+import { authAPI } from '../server/todo.api';
+import type { User } from '../types/Types';
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+  (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+  (err instanceof Error ? err.message : fallback);
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -12,6 +17,7 @@ export default function Register() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
     if (!name.trim() || !email.trim() || !password || !confirm) {
       setError('Please fill in all fields.');
       return;
@@ -24,18 +30,40 @@ export default function Register() {
       setError('Passwords do not match.');
       return;
     }
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
     try {
-      const token = await authAPI.Register({ name,email: email.trim(), password });
-      localStorage.setItem('access_token', token.access_token);
-      localStorage.setItem('user_name', name.trim());
-      localStorage.setItem('user_email', email.trim());
+      const res: Partial<User> & { access_token?: string; user?: User } =
+        await authAPI.register({
+          name: trimmedName,
+          email: trimmedEmail,
+          password,
+        });
+
+      if (res.access_token) {
+        localStorage.setItem('access_token', res.access_token);
+        localStorage.setItem('user_name', trimmedName);
+        localStorage.setItem('user_email', res.user?.email ?? trimmedEmail);
+        localStorage.setItem('user_data', JSON.stringify(res.user ?? res));
+      } else {
+        const loginData = await authAPI.login({
+          email: trimmedEmail,
+          password,
+        });
+        localStorage.setItem('access_token', loginData.access_token);
+        localStorage.setItem('user_name', trimmedName);
+        localStorage.setItem('user_email', loginData.user?.email ?? trimmedEmail);
+        if (loginData.user) {
+          localStorage.setItem('user_data', JSON.stringify(loginData.user));
+        }
+      }
+
       window.location.href = '/';
-       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Register failed. Please try again.');
+      setError(getErrorMessage(err, 'Register failed. Please try again.'));
     }
-    // Demo only — no backend
-    
   };
 
   return (

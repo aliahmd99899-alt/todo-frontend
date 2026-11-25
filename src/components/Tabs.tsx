@@ -1,6 +1,16 @@
-const DEFAULT_TABS = ['All Tasks', 'Work', 'Personal', 'Archived'];
+const DEFAULT_TABS = ['All Tasks', 'Work', 'Personal', 'Archived'] as const;
 
-export default function Tabs({ active, onChange, tabs = DEFAULT_TABS }) {
+type TabsProps<T extends string = string> = {
+  active: T;
+  onChange: (tab: T) => void;
+  tabs?: readonly T[];
+};
+
+export default function Tabs<T extends string = string>({
+  active,
+  onChange,
+  tabs = DEFAULT_TABS as unknown as readonly T[],
+}: TabsProps<T>) {
   return (
     <div className="mt-8">
       <div className="flex items-center gap-7">

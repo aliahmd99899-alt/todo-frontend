@@ -4,9 +4,9 @@ import type { Task } from '../types/Types';
 
 type TaskListProps = {
   tasks: Task[];
-  onToggle: (id: number) => void;
-  onArchive?: (id: number) => void;
-  onUnarchive?: (id: number) => void;
+  onToggle: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
   emptyTitle?: string;
   emptyBody?: string;
 };
