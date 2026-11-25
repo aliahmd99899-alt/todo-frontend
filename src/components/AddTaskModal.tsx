@@ -1,8 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTasks } from '../context/TasksContext';
-import { taskAPI } from '../server/todo.api';
-import type { Project, CreateTaskPayload, Task, AddTaskModalProps } from '../types/Types';
+import type { Project, CreateTaskPayload, AddTaskModalProps } from '../types/Types';
 import AddProjectModal from './AddProjectModal';
 import Button from '../ui/Button';
 import Field from '../ui/Field';
@@ -11,19 +10,12 @@ import ProjectSelect from './ProjectSelect';
 import CategoryPicker from './CategoryPicker';
 import { useProjects } from '../hooks/useProjects';
 import { useModalLifecycle } from '../hooks/useModalLifecycle';
-import { isoToday, normalizeDate } from '../utils/dates';
+import { isoToday } from '../utils/dates';
 import { FIELD, ERROR_BOX, type Category } from '../constants/styles';
 
 const getErrorMessage = (err: unknown, fallback: string) =>
   (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
   (err instanceof Error ? err.message : fallback);
-
-function unwrapTask(res: Task | { data: Task }): Task {
-  if (res && typeof res === 'object' && 'data' in res) {
-    return (res as { data: Task }).data;
-  }
-  return res as Task;
-}
 
 export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
   const { addTask } = useTasks();
@@ -64,13 +56,13 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
 
   if (!open) return null;
 
-  const selectedProject = projects.find((p) => p._id === selectedProjectId);
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
   const selectedProjectName = selectedProject?.name ?? '';
   const canSubmit = !!title.trim() && !!selectedProjectId && !submitting;
 
   const handleProjectCreated = (newProject: Project) => {
     addProject(newProject);
-    if (newProject._id) setSelectedProjectId(newProject._id);
+    if (newProject.id) setSelectedProjectId(newProject.id);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -84,7 +76,6 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
     setSubmitting(true);
     setError('');
 
-    let created: Task;
     try {
       const payload: CreateTaskPayload = {
         title: title.trim(),
@@ -94,21 +85,13 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
         dueDate,
       };
 
-      const res = await taskAPI.addTask(payload);
-      created = unwrapTask(res);
+      await addTask(payload);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to add task. Please try again.'));
       return;
     } finally {
       setSubmitting(false);
     }
-
-    addTask({
-      title: created.title ?? title.trim(),
-      project: created.project ?? selectedProjectName,
-      category: created.category ?? category,
-      dueDate: normalizeDate(created.dueDate, dueDate),
-    });
 
     onClose();
   };

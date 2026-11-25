@@ -41,30 +41,37 @@ api.interceptors.response.use(
 //===== auth =====
 export const authAPI = {
   login: (loginData: LoginPayload) =>
-    api.post<{ access_token: string; user: User }>('/users/login', loginData),
+    api
+      .post<{ access_token: string; user: User }>('/users/login', loginData)
+      .then((res) => res.data),
   register: (registerData: RegisterPayload) =>
-    api.post<User>('/users', registerData),
+    api.post<User>('/users', registerData).then((res) => res.data),
 };
 
 //===== projects =====
 export const projectAPI = {
   addProject: (project: CreateProjectPayload) =>
-    api.post<Project>('/projects', project),
-  getAllProjects: () => api.get<Project[]>('/projects'),
+    api.post<Project>('/projects', project).then((res) => res.data),
+  getAllProjects: () =>
+    api.get<Project[]>('/projects').then((res) => res.data),
   getProjectById: (projectId: string) =>
-    api.get<Project>(`/projects/${projectId}`),
+    api.get<Project>(`/projects/${projectId}`).then((res) => res.data),
   updateProject: (projectId: string, project: Partial<CreateProjectPayload>) =>
-    api.put<Project>(`/projects/${projectId}`, project),
+    api.put<Project>(`/projects/${projectId}`, project).then((res) => res.data),
   removeProject: (projectId: string) =>
-    api.delete(`/projects/${projectId}`),
+    api.delete(`/projects/${projectId}`).then((res) => res.data),
 };
 
 //===== tasks =====
 export const taskAPI = {
-  addTask: (task: CreateTaskPayload) => api.post<Task>('/tasks', task),
-  getAllTasks: () => api.get<Task[]>('/tasks'),
-  getTaskById: (taskId: string) => api.get<Task>(`/tasks/${taskId}`),
+  addTask: (task: CreateTaskPayload) =>
+    api.post<Task>('/tasks', task).then((res) => res.data),
+  getAllTasks: () =>
+    api.get<Task[]>('/tasks').then((res) => res.data),
+  getTaskById: (taskId: string) =>
+    api.get<Task>(`/tasks/${taskId}`).then((res) => res.data),
   updateTask: (taskId: string, task: Partial<UpdateTask>) =>
-    api.put<Task>(`/tasks/${taskId}`, task),
-  removeTask: (taskId: string) => api.delete(`/tasks/${taskId}`),
+    api.put<Task>(`/tasks/${taskId}`, task).then((res) => res.data),
+  removeTask: (taskId: string) =>
+    api.delete(`/tasks/${taskId}`).then((res) => res.data),
 };

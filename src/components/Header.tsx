@@ -1,15 +1,42 @@
-export default function Header({ title, subtitle, search = '', onSearch, onAddClick }) {
+import type { ReactNode } from 'react';
+
+type HeaderProps = {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  search?: string;
+  onSearch?: (value: string) => void;
+  onAddClick?: () => void;
+};
+
+export default function Header({
+  title,
+  subtitle,
+  search = '',
+  onSearch,
+  onAddClick,
+}: HeaderProps) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-6">
       <div>
-        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.025em] text-white">{title}</h1>
-        <p className="mt-2 text-[13.5px] text-white/40">{subtitle}</p>
+        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.025em] text-white">
+          {title}
+        </h1>
+        {subtitle && <p className="mt-2 text-[13.5px] text-white/40">{subtitle}</p>}
       </div>
 
       <div className="flex items-center gap-2.5">
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="m20 20-3.6-3.6" />
             </svg>
@@ -23,7 +50,6 @@ export default function Header({ title, subtitle, search = '', onSearch, onAddCl
           />
         </div>
 
-        
         {onAddClick && (
           <button
             type="button"

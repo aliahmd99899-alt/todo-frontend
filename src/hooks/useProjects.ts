@@ -44,7 +44,7 @@ export function useProjects(open: boolean) {
   const addProject = useCallback((project: Project) => {
     setProjects((prev) => [...prev, project]);
     setError('');
-    if (project._id) setSelectedProjectId(project._id);
+    if (project.id) setSelectedProjectId(project.id);
   }, []);
 
   return {

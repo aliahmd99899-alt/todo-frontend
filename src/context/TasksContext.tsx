@@ -1,37 +1,66 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { Task, CreateTaskPayload, UpdateTask} from '../types/Types'
-import {taskAPI } from '../server/todo.api'
-import {isoToday} from '../utils/dates'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { Task, CreateTaskPayload } from '../types/Types';
+import { taskAPI } from '../server/todo.api';
+import { isoToday } from '../utils/dates';
 
-const TasksContext = createContext(null);
+type TasksContextValue = {
+  tasks: Task[];
+  addTask: (task: CreateTaskPayload) => Promise<void>;
+  toggleTask: (id: string) => void;
+  archiveTask: (id: string) => Promise<void>;
+  unarchiveTask: (id: string) => Promise<void>;
+};
 
-export function TasksProvider({ children }) {
+const TasksContext = createContext<TasksContextValue | null>(null);
+
+function unwrapTasks(res: Task[] | { data: Task[] }): Task[] {
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === 'object' && 'data' in res) {
+    return unwrapTasks(res.data as Task[] | { data: Task[] });
+  }
+  return [];
+}
+
+function unwrapTask(res: Task | { data: Task }): Task {
+  if (res && typeof res === 'object' && 'data' in res) {
+    return unwrapTask((res as { data: Task | { data: Task } }).data);
+  }
+  return res as Task;
+}
+
+export function TasksProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+
   useEffect(() => {
     let cancelled = false;
 
-    taskAPI.getAllTasks()
-    .then(data => {
-      if (!cancelled) setTasks(data);
-    })
-    .catch(err => {
-      if (!cancelled) console.error(err);
-    });
+    taskAPI
+      .getAllTasks()
+      .then((res) => {
+        if (!cancelled) setTasks(unwrapTasks(res));
+      })
+      .catch((err) => {
+        if (!cancelled) console.error(err);
+      });
 
-    return () => { cancelled = true; };
-  }, []);  // ← مصفوفة فارغة: نُشغّل مرة واحدة فقط عند التحميل
-  
-  const addTask = async (task: CreateTaskPayload) => {
-  try {
-    const created = await taskAPI.addTask(task);  // ← الخادم يُرجع المهمة الكاملة
-    setTasks(prev => [created, ...prev]);         // ← حدّث الحالة المحلية
-  } catch (err) {
-    console.error('Failed to add task', err);
-    throw err;  // ← أعِد الرمي ليتمكن المستدعي من التعامل معه
-  }
-};
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const toggleTask = (id:string) =>
+  const addTask = useCallback(async (task: CreateTaskPayload) => {
+    try {
+      const res = await taskAPI.addTask(task);
+      const created = unwrapTask(res);
+      setTasks((prev) => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to add task', err);
+      throw err;
+    }
+  }, []);
+
+  const toggleTask = useCallback((id: string) => {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
@@ -41,27 +70,30 @@ export function TasksProvider({ children }) {
         return { ...t, done: true, completedAt: isoToday() };
       })
     );
+  }, []);
 
-  const archiveTask = async (id: string) => {
+  const archiveTask = useCallback(async (id: string) => {
     try {
-    const updated = await taskAPI.updateTask(id, { archived: true });
-    setTasks(prev => prev.map(t => (t.id === id ? updated : t)));
+      const res = await taskAPI.updateTask(id, { archived: true });
+      const updated = unwrapTask(res);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
     } catch (err) {
       console.error('Failed to archive task', err);
-    throw err;
+      throw err;
     }
-  };
+  }, []);
 
-  const unarchiveTask = async (id: string) => {
+  const unarchiveTask = useCallback(async (id: string) => {
     try {
-      const updated = await taskAPI.updateTask(id, { archived: false });
-      setTasks(prev => prev.map(t => (t.id === id ? updated : t)));
+      const res = await taskAPI.updateTask(id, { archived: false });
+      const updated = unwrapTask(res);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
     } catch (err) {
       console.error('Failed to unarchive task', err);
       throw err;
     }
-  };
-  
+  }, []);
+
   return (
     <TasksContext.Provider value={{ tasks, addTask, toggleTask, archiveTask, unarchiveTask }}>
       {children}

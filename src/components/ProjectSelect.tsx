@@ -60,7 +60,7 @@ export default function ProjectSelect({
     );
   }
 
-  const selectedIndex = projects.findIndex((p) => p._id === selectedProjectId);
+  const selectedIndex = projects.findIndex((p) => p.id === selectedProjectId);
   const dotColor = DOT_COLORS[Math.max(0, selectedIndex) % DOT_COLORS.length];
 
   return (
@@ -75,7 +75,7 @@ export default function ProjectSelect({
         className={`${FIELD} appearance-none py-3 pl-9 pr-10`}
       >
         {projects.map((p) => (
-          <option key={p._id} value={p._id} className="bg-[#171034] text-white">
+          <option key={p._id} value={p.id} className="bg-[#171034] text-white">
             {p.name}
           </option>
         ))}

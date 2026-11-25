@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import {TaskCategory} from '../enum/enums'
+import type{TaskCategory} from '../enum/enums'
 
 export type User = {
   id: string;

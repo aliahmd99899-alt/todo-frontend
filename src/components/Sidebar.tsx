@@ -15,11 +15,24 @@ const DOT_COLORS = [
   'bg-[#34D399] shadow-[0_0_8px_#34D399]',
 ];
 
-// استخراج الاسم والأحرف الأولى من user_data أو user_email
-
+function getUserDisplayName(email: string | null): string {
+  try {
+    const raw = localStorage.getItem('user_data');
+    if (raw) {
+      const parsed = JSON.parse(raw) as { name?: string; email?: string };
+      if (parsed.name) return parsed.name;
+      if (parsed.email) return parsed.email;
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+  return email || 'User';
+}
 
 export default function Sidebar() {
   const email = localStorage.getItem('user_email');
+  const displayName = getUserDisplayName(email);
+
   const { tasks } = useTasks();
   const { pathname } = useLocation();
   const { collapsed, toggle } = useSidebar();
@@ -33,7 +46,9 @@ export default function Sidebar() {
     projectAPI
       .getAllProjects()
       .then((data) => {
-        if (!cancelled) setProjects(data);
+        if (!cancelled) {
+          setProjects(Array.isArray(data) ? data : []);
+        }
       })
       .catch((err) => {
         if (!cancelled) console.error(err);
@@ -45,8 +60,8 @@ export default function Sidebar() {
   }, []);
 
   const NAV: Url[] = [
-    { label: 'Today',     active: true, badge: String(pendingCount), href: '/',          icon: CalendarDays },
-    { label: 'Tasks',     active: true, href: '/pending',   icon: ListTodo },
+    { label: 'Today', active: true, badge: String(pendingCount), href: '/', icon: CalendarDays },
+    { label: 'Tasks', active: true, href: '/pending', icon: ListTodo },
     { label: 'Completed', active: true, href: '/completed', icon: CheckCircle2 },
   ];
 
@@ -161,11 +176,11 @@ export default function Sidebar() {
       <div className={`flex flex-col gap-[2px] ${collapsed ? 'items-center' : ''}`}>
         {projects.map((project, i) => {
           const dot = DOT_COLORS[i % DOT_COLORS.length];
-          const projectName = (project as { name?: string }).name ?? 'Untitled';
+          const projectName = project.name ?? 'Untitled';
 
           return (
             <div
-              key={(project as { _id?: string })._id ?? projectName ?? i}
+              key={project.id ?? projectName ?? i}
               title={collapsed ? projectName : undefined}
               className={`flex cursor-pointer items-center rounded-[10px] font-medium text-white/55 transition hover:bg-white/5 hover:text-white/85 ${
                 collapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3 py-2 text-[13px]'
@@ -191,13 +206,12 @@ export default function Sidebar() {
           collapsed ? 'justify-center px-1.5 py-1.5' : 'gap-2.5 px-2.5 py-2.5'
         }`}
       >
-        
         <span
           className={`overflow-hidden whitespace-nowrap text-[13px] font-medium text-white transition-all duration-300 ${
             collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
           }`}
         >
-          {email}
+          {email || displayName}
         </span>
       </div>
     </aside>
