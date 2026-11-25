@@ -75,7 +75,7 @@ export default function ProjectSelect({
         className={`${FIELD} appearance-none py-3 pl-9 pr-10`}
       >
         {projects.map((p) => (
-          <option key={p._id} value={p.id} className="bg-[#171034] text-white">
+          <option key={p.id} value={p.id} className="bg-[#171034] text-white">
             {p.name}
           </option>
         ))}
