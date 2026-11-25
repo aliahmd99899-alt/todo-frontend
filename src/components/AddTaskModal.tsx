@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { taskAPI } from '../server/todo.api';
@@ -31,7 +31,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Work');
-  const [dueDate, setDueDate] = useState(isoToday());
+  const [dueDate, setDueDate] = useState(isoToday);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [addProjectOpen, setAddProjectOpen] = useState(false);
@@ -46,15 +46,18 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
     addProject,
   } = useProjects(open);
 
+  const handleReset = useCallback(() => {
+    setTitle('');
+    setCategory('Work');
+    setDueDate(isoToday());
+    setError('');
+    setAddProjectOpen(false);
+  }, []);
+
   const { entered } = useModalLifecycle({
     open,
     onClose,
-    onReset: () => {
-      setTitle('');
-      setCategory('Work');
-      setDueDate(isoToday());
-      setError('');
-    },
+    onReset: handleReset,
     inputRef,
     blocked: submitting || addProjectOpen,
   });
@@ -81,6 +84,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
     setSubmitting(true);
     setError('');
 
+    let created: Task;
     try {
       const payload: CreateTaskPayload = {
         title: title.trim(),
@@ -91,27 +95,28 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
       };
 
       const res = await taskAPI.addTask(payload);
-      const created = unwrapTask(res);
-
-      addTask({
-        title: created.title ?? title.trim(),
-        project: created.project ?? selectedProjectName,
-        category: created.category ?? category,
-        dueDate: normalizeDate(created.dueDate, dueDate),
-      });
-
-      onClose();
+      created = unwrapTask(res);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to add task. Please try again.'));
+      return;
     } finally {
       setSubmitting(false);
     }
+
+    addTask({
+      title: created.title ?? title.trim(),
+      project: created.project ?? selectedProjectName,
+      category: created.category ?? category,
+      dueDate: normalizeDate(created.dueDate, dueDate),
+    });
+
+    onClose();
   };
 
   return (
     <>
       <div
-        onClick={submitting ? undefined : onClose}
+        onClick={submitting || addProjectOpen ? undefined : onClose}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       >
         <div
@@ -156,6 +161,7 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
               label="Project"
               action={
                 <Button
+                  type="button"
                   variant="link"
                   onClick={() => setAddProjectOpen(true)}
                   disabled={submitting}
@@ -194,7 +200,12 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
             {error && <p className={`rounded-lg px-3 py-2 ${ERROR_BOX}`}>{error}</p>}
 
             <div className="mt-2 flex justify-end gap-2">
-              <Button onClick={onClose} disabled={submitting} className="rounded-xl px-4 py-2.5 text-[13px]">
+              <Button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="rounded-xl px-4 py-2.5 text-[13px]"
+              >
                 Cancel
               </Button>
               <Button

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { projectAPI } from '../server/todo.api';
 import type { Project, CreateProjectPayload } from '../types/Types';
@@ -32,13 +32,15 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const handleReset = useCallback(() => {
+    setName('');
+    setError('');
+  }, []);
+
   const { entered } = useModalLifecycle({
     open,
     onClose,
-    onReset: () => {
-      setName('');
-      setError('');
-    },
+    onReset: handleReset,
     inputRef,
     blocked: submitting,
   });
@@ -52,16 +54,20 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
     setSubmitting(true);
     setError('');
 
+    let createdProject: Project;
     try {
       const payload: CreateProjectPayload = { name: name.trim() };
       const res = await projectAPI.addProject(payload);
-      onCreated(unwrapProject(res));
-      onClose();
+      createdProject = unwrapProject(res);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create project. Please try again.'));
+      return;
     } finally {
       setSubmitting(false);
     }
+
+    onCreated(createdProject);
+    onClose();
   };
 
   return (
@@ -110,7 +116,12 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
           {error && <p className={`rounded-lg px-3 py-2 ${ERROR_BOX}`}>{error}</p>}
 
           <div className="mt-2 flex justify-end gap-2">
-            <Button onClick={onClose} disabled={submitting} className="rounded-xl px-4 py-2.5 text-[13px]">
+            <Button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="rounded-xl px-4 py-2.5 text-[13px]"
+            >
               Cancel
             </Button>
             <Button

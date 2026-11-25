@@ -23,33 +23,21 @@ export function useProjects(open: boolean) {
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    if (!open) return;
     let cancelled = false;
-
-    setLoading(true);
-    setError('');
 
     projectAPI
       .getAllProjects()
-      .then((res) => {
-        if (cancelled) return;
-        const list = extractList(res);
-        setProjects(list);
-        setSelectedProjectId((prev) =>
-          list.some((p) => p._id === prev) ? prev : list[0]?._id ?? '',
-        );
+      .then((data) => {
+        if (!cancelled) setProjects(data);
       })
       .catch((err) => {
-        if (!cancelled) setError(getErrorMessage(err, 'Failed to load projects.'));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) console.error(err);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [open, retryKey]);
+  }, []);
 
   const retry = useCallback(() => setRetryKey((k) => k + 1), []);
 
