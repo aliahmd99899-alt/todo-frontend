@@ -15,19 +15,6 @@ const DOT_COLORS = [
   'bg-[#34D399] shadow-[0_0_8px_#34D399]',
 ];
 
-function getUserDisplayName(email: string | null): string {
-  try {
-    const raw = localStorage.getItem('user_data');
-    if (raw) {
-      const parsed = JSON.parse(raw) as { name?: string; email?: string };
-      if (parsed.name) return parsed.name;
-      if (parsed.email) return parsed.email;
-    }
-  } catch {
-    // ignore invalid JSON
-  }
-  return email || 'User';
-}
 
 export default function Sidebar() {
   const email = localStorage.getItem('user_email');
