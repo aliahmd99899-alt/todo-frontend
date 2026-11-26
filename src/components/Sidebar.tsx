@@ -188,7 +188,7 @@ export default function Sidebar() {
 
       {/* User card */}
       <div
-        title={collapsed ? displayName : undefined}
+        
         className={`mt-auto flex items-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all duration-300 ${
           collapsed ? 'justify-center px-1.5 py-1.5' : 'gap-2.5 px-2.5 py-2.5'
         }`}
