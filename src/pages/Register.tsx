@@ -44,7 +44,7 @@ export default function Register() {
 
       if (res.access_token) {
         localStorage.setItem('access_token', res.access_token);
-        localStorage.setItem('user_name', trimmedName);
+        localStorage.setItem('name', res.user?.name ?? email.trim())
         localStorage.setItem('user_email', res.user?.email ?? trimmedEmail);
         localStorage.setItem('user_data', JSON.stringify(res.user ?? res));
       } else {
@@ -53,7 +53,7 @@ export default function Register() {
           password,
         });
         localStorage.setItem('access_token', loginData.access_token);
-        localStorage.setItem('user_name', trimmedName);
+        localStorage.setItem('name', res.user?.name ?? email.trim())
         localStorage.setItem('user_email', loginData.user?.email ?? trimmedEmail);
         if (loginData.user) {
           localStorage.setItem('user_data', JSON.stringify(loginData.user));

@@ -24,6 +24,7 @@ export default function Login() {
       const data = await authAPI.login({ email: email.trim(), password });
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user_email', data.user?.email ?? email.trim());
+      localStorage.setItem('name', data.user?.name ?? email.trim())
       if (data.user) {
         localStorage.setItem('user_data', JSON.stringify(data.user));
       }

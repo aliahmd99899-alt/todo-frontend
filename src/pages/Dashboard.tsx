@@ -14,11 +14,30 @@ import { dueSortValue } from '../utils/dates';
 const TABS = ['All Tasks', 'Work', 'Personal'];
 const LIMIT = 10;
 
+function getStoredUserName(): string {
+  const direct = localStorage.getItem('name') || localStorage.getItem('user_name');
+  if (direct) return direct;
+
+  try {
+    const raw = localStorage.getItem('user_data');
+    if (raw) {
+      const parsed = JSON.parse(raw) as { name?: string };
+      if (parsed.name) return parsed.name;
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+
+  return localStorage.getItem('user_email') || 'there';
+}
+
 export default function Dashboard() {
   const { tasks, toggleTask, archiveTask } = useTasks();
   const { collapsed } = useSidebar();
   const [tab, setTab] = useState('All Tasks');
+  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const user = getStoredUserName();
 
   // "N" opens the Add Task modal (skipped while typing)
   useEffect(() => {
@@ -36,20 +55,27 @@ export default function Dashboard() {
 
   // Subtitle counts every pending (not done, not archived) task — unchanged
   const pending = tasks.filter((t) => !t.done && !t.archived).length;
+  const q = search.trim().toLowerCase();
 
-  // Derived every render: pending → active tab → sorted by due date
+  // Derived every render: pending → active tab → search → sorted by due date
   const filtered = tasks
     .filter((t) => !t.done && !t.archived)
     .filter((t) => tab === 'All Tasks' || t.category === tab)
+    .filter((t) => t.title.toLowerCase().includes(q))
     .sort((a, b) => dueSortValue(a.dueDate) - dueSortValue(b.dueDate));
 
   const visible = filtered.slice(0, LIMIT);
   const hasMore = filtered.length > LIMIT;
 
-  const emptyTitle =
-    tab === 'Work' || tab === 'Personal' ? `No pending ${tab} tasks` : 'All caught up!';
-  const emptyBody =
-    tab === 'Work' || tab === 'Personal'
+  const emptyTitle = q
+    ? 'No matching tasks'
+    : tab === 'Work' || tab === 'Personal'
+      ? `No pending ${tab} tasks`
+      : 'All caught up!';
+
+  const emptyBody = q
+    ? 'Try a different search keyword.'
+    : tab === 'Work' || tab === 'Personal'
       ? 'Add a new task to get started.'
       : 'You have no pending tasks.';
 
@@ -70,7 +96,7 @@ export default function Dashboard() {
             <>
               Good morning,{' '}
               <span className="bg-gradient-to-r from-[#A78BFA] to-[#EC4899] bg-clip-text text-transparent">
-                Alex
+                {user}
               </span>
               .
             </>
@@ -80,6 +106,8 @@ export default function Dashboard() {
               You have <span className="font-semibold text-white">{pending}</span> tasks remaining for today.
             </>
           }
+          search={search}
+          onSearch={setSearch}
           onAddClick={() => setOpen(true)}
         />
 

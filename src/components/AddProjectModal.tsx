@@ -8,6 +8,18 @@ import Icon from '../ui/Icon';
 import { useModalLifecycle } from '../hooks/useModalLifecycle';
 import { FIELD, ERROR_BOX } from '../constants/styles';
 
+const PRESET_COLORS = [
+  '#A78BFA',
+  '#EC4899',
+  '#22D3EE',
+  '#FACC15',
+  '#34D399',
+  '#F97316',
+  '#60A5FA',
+] as const;
+
+const DEFAULT_COLOR = PRESET_COLORS[0];
+
 const getErrorMessage = (err: unknown, fallback: string) =>
   (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
   (err instanceof Error ? err.message : fallback);
@@ -29,11 +41,13 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState('');
+  const [color, setColor] = useState<string>(DEFAULT_COLOR);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const handleReset = useCallback(() => {
     setName('');
+    setColor(DEFAULT_COLOR);
     setError('');
   }, []);
 
@@ -56,7 +70,10 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
 
     let createdProject: Project;
     try {
-      const payload: CreateProjectPayload = { name: name.trim() };
+      const payload: CreateProjectPayload = {
+        name: name.trim(),
+        color: color.toUpperCase(),
+      };
       const res = await projectAPI.addProject(payload);
       createdProject = unwrapProject(res);
     } catch (err) {
@@ -111,6 +128,45 @@ export default function AddProjectModal({ open, onClose, onCreated }: AddProject
               placeholder="Enter project name"
               className={`${FIELD} px-4 py-3 placeholder:text-white/30`}
             />
+          </Field>
+
+          <Field label="Color">
+            <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
+              {PRESET_COLORS.map((preset) => {
+                const selected = color.toLowerCase() === preset.toLowerCase();
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setColor(preset)}
+                    aria-label={`Select color ${preset}`}
+                    style={{ backgroundColor: preset }}
+                    className={`h-7 w-7 rounded-full transition ${
+                      selected
+                        ? 'scale-110 ring-2 ring-white ring-offset-2 ring-offset-[#130E2A]'
+                        : 'opacity-80 hover:scale-105 hover:opacity-100'
+                    }`}
+                  />
+                );
+              })}
+
+              <label
+                className="ml-auto flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[12px] text-white/75 transition hover:bg-white/10"
+                title="Choose custom color"
+              >
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  disabled={submitting}
+                  className="h-5 w-5 cursor-pointer border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
+                />
+                <span className="font-mono text-[11.5px] uppercase text-white/70">
+                  {color}
+                </span>
+              </label>
+            </div>
           </Field>
 
           {error && <p className={`rounded-lg px-3 py-2 ${ERROR_BOX}`}>{error}</p>}

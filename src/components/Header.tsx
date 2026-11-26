@@ -15,6 +15,7 @@ export default function Header({
   onSearch,
   onAddClick,
 }: HeaderProps) {
+  
   return (
     <header className="flex flex-wrap items-start justify-between gap-6">
       <div>

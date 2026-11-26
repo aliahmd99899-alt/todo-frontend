@@ -71,7 +71,7 @@ export const taskAPI = {
   getTaskById: (taskId: string) =>
     api.get<Task>(`/tasks/${taskId}`).then((res) => res.data),
   updateTask: (taskId: string, task: Partial<UpdateTask>) =>
-    api.put<Task>(`/tasks/${taskId}`, task).then((res) => res.data),
+    api.patch<Task>(`/tasks/${taskId}`, task).then((res) => res.data),
   removeTask: (taskId: string) =>
     api.delete(`/tasks/${taskId}`).then((res) => res.data),
 };

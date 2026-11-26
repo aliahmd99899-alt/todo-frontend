@@ -158,8 +158,8 @@ export default function TaskCard({
               type="button"
               onClick={onArchive}
               aria-label="Archive task"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 opacity-0 pointer-events-none transition group-hover:pointer-events-auto group-hover:opacity-100 hover:bg-white/10 hover:text-white"
-            >
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/10 hover:text-white"
+              >
               <svg
                 width="14"
                 height="14"

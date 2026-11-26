@@ -31,7 +31,7 @@ function getUserDisplayName(email: string | null): string {
 
 export default function Sidebar() {
   const email = localStorage.getItem('user_email');
-  const displayName = getUserDisplayName(email);
+  const displayName = localStorage.getItem('name');
 
   const { tasks } = useTasks();
   const { pathname } = useLocation();
@@ -206,12 +206,13 @@ export default function Sidebar() {
           collapsed ? 'justify-center px-1.5 py-1.5' : 'gap-2.5 px-2.5 py-2.5'
         }`}
       >
+        {displayName}
         <span
           className={`overflow-hidden whitespace-nowrap text-[13px] font-medium text-white transition-all duration-300 ${
             collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
           }`}
         >
-          {email || displayName}
+          {email}
         </span>
       </div>
     </aside>
