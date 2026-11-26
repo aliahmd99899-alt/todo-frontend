@@ -56,7 +56,6 @@ export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
 
   if (!open) return null;
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
   
   const canSubmit = !!title.trim() && !!selectedProjectId && !submitting;
 
